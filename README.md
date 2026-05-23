@@ -40,21 +40,50 @@ If Redis is not configured in local development, idempotency caching is skipped 
 Pending reservations include `expiresAt`. The `/api/cron/release-expired` endpoint transitions expired reservations to `released` and restores inventory. Schedule this endpoint using Vercel Cron (or any scheduler).
 
 ## Local Setup
-1. Install dependencies
+1. Clone and install dependencies
+   - `git clone <your-fork-url>`
+   - `cd allo-inventory`
    - `npm install`
-2. Configure environment variables
-   - `DATABASE_URL=postgres://...`
-   - `UPSTASH_REDIS_REST_URL=...`
-   - `UPSTASH_REDIS_REST_TOKEN=...`
-   - Redis variables are optional for local development
-3. Run Prisma migrations
+2. Create a database
+   - Recommended: Supabase, Neon, or Railway (free tier is fine).
+   - Copy the **direct** Postgres connection string.
+3. Add environment variables
+   - Create a `.env` file in the project root with:
+     - `DATABASE_URL=postgres://...`
+     - `UPSTASH_REDIS_REST_URL=...` (optional for idempotency)
+     - `UPSTASH_REDIS_REST_TOKEN=...` (optional for idempotency)
+4. Run migrations
    - `npx prisma migrate dev`
-4. Start the dev server
+5. Seed demo data
+   - `npm run prisma:seed`
+6. Start the app
    - `npm run dev`
+   - Open `http://localhost:3000`
+
+If you want to reset everything and start fresh:
+```
+npx prisma migrate reset
+npm run prisma:seed
+```
+
+## Product Images
+Place images in:
+```
+public/images/products
+```
+Use these exact filenames:
+- `SAMSUNG-S26-ULTRA.jpg`
+- `IPHONE-17-PRO-MAX.jpg`
+- `GOOGLE-PIXEL-10-PRO.jpg`
+- `SAMSUNG-FOLD-7.jpg`
+
+Recommended size: **800x600** or **1200x900** (4:3 ratio).
 
 ## Deployment Notes
 - Use a hosted Postgres provider (Supabase/Neon/Railway) for production.
 - Point `DATABASE_URL` to the hosted database, and re-run migrations + seed.
+- Add Upstash Redis env vars to enable idempotency in production.
+- Deploy to Vercel and set the same env vars in the Vercel project.
 
 ## API Endpoints
 - `GET /api/products` - List products with stock per warehouse
