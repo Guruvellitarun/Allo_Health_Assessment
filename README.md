@@ -2,7 +2,8 @@
 
 A Next.js App Router platform that prevents checkout race conditions by reserving inventory with atomic database updates and expiring holds.
 
-Deployed Link - allo-health-assessment-ochf9yx73-gts-projects-81757cfb.vercel.app
+## Live Demo
+- https://allo-health-assessment-ochf9yx73-gts-projects-81757cfb.vercel.app
 
 ## Highlights
 - Atomic reservation updates with PostgreSQL row-level locking via Prisma $executeRaw
