@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import type { Reservation } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { addMinutes, nowUtc, RESERVATION_TTL_MINUTES } from "@/lib/time";
@@ -9,6 +10,8 @@ type IdempotencyResult<T> = {
   status: number;
   body: T;
 };
+
+type ReservationResultBody = Reservation | { message: string; code: string } | null;
 
 const IDEMPOTENCY_TTL_SECONDS = 60 * 60 * 24;
 
@@ -98,11 +101,11 @@ export const confirmReservation = async (
   reservationId: string,
   idempotencyKey?: string | null
 ) => {
-  const cached = await getCached("confirm", idempotencyKey);
+  const cached = await getCached<ReservationResultBody>("confirm", idempotencyKey);
   if (cached) return cached;
 
   const now = nowUtc();
-  const result = await prisma.$transaction(async (tx) => {
+  const result: IdempotencyResult<ReservationResultBody> = await prisma.$transaction(async (tx) => {
     const current = await tx.reservation.findUnique({
       where: { id: reservationId },
     });
@@ -156,7 +159,7 @@ export const confirmReservation = async (
     return { status: 200, body: updated };
   });
 
-  await setCached("confirm", idempotencyKey, result);
+  await setCached<ReservationResultBody>("confirm", idempotencyKey, result);
   return result;
 };
 
@@ -164,7 +167,7 @@ export const releaseReservation = async (
   reservationId: string,
   idempotencyKey?: string | null
 ) => {
-  const cached = await getCached("release", idempotencyKey);
+  const cached = await getCached<ReservationResultBody>("release", idempotencyKey);
   if (cached) return cached;
 
   const reservation = await prisma.reservation.findUnique({
@@ -179,7 +182,7 @@ export const releaseReservation = async (
     return { status: 409, body: { message: "Reservation not pending", code: "NOT_PENDING" } };
   }
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result: IdempotencyResult<ReservationResultBody> = await prisma.$transaction(async (tx) => {
     const updatedReservation = await tx.$executeRaw`
       UPDATE "Reservation"
       SET "status" = 'released', "updatedAt" = NOW()
@@ -210,7 +213,7 @@ export const releaseReservation = async (
     return { status: 200, body: updated };
   });
 
-  await setCached("release", idempotencyKey, result);
+  await setCached<ReservationResultBody>("release", idempotencyKey, result);
   return result;
 };
 
