@@ -3,6 +3,8 @@ import { getReservationById } from "@/services/reservation.service";
 import { ReservationSummary } from "@/components/features/reservation-summary";
 import type { ReservationDetail } from "@/types/reservation";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReservationPage({
   params,
 }: {
